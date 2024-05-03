@@ -1,13 +1,12 @@
 import rclpy 
 
 from rclpy.node import Node
-
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
 from turtlesim.srv import Spawn, Kill, SetPen
 import time
 
-pontos = [(1, 1, 3), (1, 5, 3), (5, 5, -3), (5, 1, 2), (1, 1, 1 )]
+pontos2=[(0.0, -5.0, 3.0), (0.0,3.0,-2.5),(0.0,3.0,-2.5),(-3.0, -3.0, 3.0)]
 
 class TurtleDraw(Node):
     def __init__(self):
@@ -25,23 +24,15 @@ class TurtleDraw(Node):
             qos_profile=10
         )
         
-        timer_period=0.5
-        self.timer=self.create_timer(
-            timer_period_sec=timer_period,
-            callback=self.move_callback
-        )
-
     def pose_callback(self, msg: Pose):
         # Access the turtle's current position and orientation
         x = msg.x
         y = msg.y
         theta = msg.theta
-
-        self.get_logger().info(f"Turtle position: x={x}, y={y}, theta={theta}")
         return x, y, theta
 
 
-    def move_callback(self,x,y,theta):
+    def move_turtle(self,x,y,theta):
         msg=Twist()
         msg.linear.x=x
         msg.linear.y=y
@@ -49,12 +40,35 @@ class TurtleDraw(Node):
         self.publisher.publish(msg)
         self.get_logger().info("publicando velocidades para a tartaruga")
     
-    
+def set_pen_color(r, g, b, off):
+
+    node = rclpy.create_node('set_pen_color')
+    set_pen_client = node.create_client(SetPen, '/turtle1/set_pen')
+
+    while not set_pen_client.wait_for_service(timeout_sec=1.0):
+        print('Service not available, waiting again...')
+    request = SetPen.Request()
+    request.r = r
+    request.g = g
+    request.b = b
+    request.width = 6  # Mantém a largura da linha inalterada
+    request.off = off    # Mantém a caneta ligada
+    future = set_pen_client.call_async(request)
+    rclpy.spin_until_future_complete(node, future)
 
 def main(args=None):
     rclpy.init(args=args)
     td = TurtleDraw()
-    rclpy.spin(td)
+    set_pen_color( 190, 150, 50, 0)
+
+    for ponto in pontos2:
+        x, y, theta = ponto
+        td.move_turtle(x, y, theta)
+        time.sleep(1)
+    
+    set_pen_color( 0, 0, 0, 1)
+
+
     td.destroy_node() 
     rclpy.shutdown()
 
