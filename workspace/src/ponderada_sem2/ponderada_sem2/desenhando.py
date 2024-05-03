@@ -6,7 +6,8 @@ from turtlesim.msg import Pose
 from turtlesim.srv import Spawn, Kill, SetPen
 import time
 
-pontos2=[(0.0, -5.0, 3.0), (0.0,3.0,-2.5),(0.0,3.0,-2.5),(-3.0, -3.0, 3.0)]
+pontos_lua=[(0.0, -5.0, 3.0), (0.0,3.0,-2.5),(0.0,3.0,-2.5),(-3.1, -3.0, 3.0)]
+pontos_estrela=[(0.0, -5.0, 3.0), (0.0,3.0,-2.5),(0.0,3.0,-2.5),(-3.1, -3.0, 3.0),(-3.1, -3.0, 3.0),(0.0,3.0,-2.5),(-3.1, -3.0, 3.0),(0.0, -5.0, 3.0)]
 
 class TurtleDraw(Node):
     def __init__(self):
@@ -61,13 +62,52 @@ def main(args=None):
     td = TurtleDraw()
     set_pen_color( 190, 150, 50, 0)
 
-    for ponto in pontos2:
+    for ponto in pontos_lua:
         x, y, theta = ponto
         td.move_turtle(x, y, theta)
         time.sleep(1)
-    
-    set_pen_color( 0, 0, 0, 1)
 
+    kill_request = Kill.Request()
+    kill_request.name = 'turtle1'
+
+    kill_client = td.create_client(Kill, 'kill')
+
+# Aguarda até que o serviço esteja disponível
+    while not kill_client.wait_for_service(timeout_sec=1.0):
+        td.get_logger().info('service not available, waiting again...')
+
+    # Faz a chamada para o serviço
+    future = kill_client.call_async(kill_request)
+    rclpy.spin_until_future_complete(td, future)
+
+    if future.result() is not None:
+        td.get_logger().info('Successfully killed turtle')
+    else:
+        td.get_logger().info('Failed to kill turtle')
+
+    spwan_request = Spawn.Request()
+    spwan_request.x = 2.0
+    spwan_request.y = 7.0
+    spwan_request.theta = 45.0
+    spwan_request.name = 'turtle2'
+    
+    spawn_client = td.create_client(Spawn, 'spawn')
+
+    while not spawn_client.wait_for_service(timeout_sec=1.0):
+        td.get_logger().info('service not available, waiting again...')
+    
+    future = spawn_client.call_async(spwan_request)
+    rclpy.spin_until_future_complete(td, future)
+
+    if future.result() is not None:
+        td.get_logger().info('Successfully spawned turtle')
+    else:
+        td.get_logger().info('Failed to spawn turtle')
+
+    for ponto in pontos_estrela:
+        x, y, theta = ponto
+        td.move_turtle(x, y, theta)
+        time.sleep(1)
 
     td.destroy_node() 
     rclpy.shutdown()
