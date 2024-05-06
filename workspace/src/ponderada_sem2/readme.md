@@ -30,7 +30,38 @@ rosdep update
 
 volte para a raíz do seu workspace e execute o comando abaixo para instalar as dependências:
 
+```bash
+rosdep install -i --from-path src --rosdistro humble -y
+```
 
+Por fim, compile o seu workspace com o comando:
+
+```bash
+colcon build
+```
+
+Para rodar o comando acima certifique-se de ter instalado o colcon. Caso não tenha, execute o comando abaixo:
+
+```bash
+sudo apt install python3-colcon-common-extensions
+```
+
+Agora basta dar um source no seu workspace:
+
+```bash
+source install/local_setup.bash
+```
+
+E executar o comando abaixo para rodar o programa:
+
+```bash
+
+ros2 run ponderada_sem2 titiruga
+```
+
+## Video
+
+[Vídeo de demonstração](https://youtu.be/LqC-m57cNyY)
 
 
 
