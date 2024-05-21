@@ -54,4 +54,4 @@ Para movimentar, use as teclas `W`, `A`, `X` e `D` para frente, esquerda, trás 
 
 ## Vídeo de Demonstração
 
-[![Vídeo de Demonstração](https://youtu.be/z58X15WlP6w)]
+![Vídeo de Demonstração](https://youtu.be/z58X15WlP6w)
