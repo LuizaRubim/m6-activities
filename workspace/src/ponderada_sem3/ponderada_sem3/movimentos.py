@@ -5,6 +5,13 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Empty
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit
+import numpy
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 
 # Classe que controla o robô
@@ -93,11 +100,67 @@ def move(teleop_turtle):
                 twist.angular.z = 0.0
                 teleop_turtle.kill_button(Empty.Request(), Empty.Response())
 
-def main(args=None):
-    rclpy.init(args=args)
+socketio = SocketIO(app)
+
+# Definimos a rota principal. Nela que vamos renderizar a página HTML
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+    rclpy.init(args=None)
+    # move(teleop_turtle)
+ 
+# Definimos o evento de mensagem. Quando o cliente enviar uma mensagem, o servidor vai receber e enviar uma resposta.
+# Existem outros eventos do SocketIO que podem ser utilizados. Alguns exemplos são: connect, disconnect, message, etc.
+@socketio.on('message')
+def handle_message(data):
     teleop_turtle = Teleop()
-    move(teleop_turtle)
+    print(f'received message: {data}')
+    emit('response', {'data': f'Server received: {data}'  }, broadcast=True)
+    twist = Twist()
+    match data:
+        case 'down':
+            twist.linear.x = -0.2
+            twist.angular.z = 0.0
+            teleop_turtle.publisher_callback(twist, "Trás")
+        case 'up':
+            twist.linear.x = 0.2
+            twist.angular.z = 0.0
+            teleop_turtle.publisher_callback(twist, "Frente")
+        case 'left':
+            twist.linear.x = 0.0
+            twist.angular.z = 1.0
+            teleop_turtle.publisher_callback(twist, "Esquerda")
+        case 'right':
+            twist.linear.x = 0.0
+            twist.angular.z = -1.0
+            teleop_turtle.publisher_callback(twist, "Direita")
+        case 'stop':
+            twist.linear.x = 0.0
+            twist.angular.z = 0.0
+            teleop_turtle.kill_button(Empty.Request(), Empty.Response())
+            teleop_turtle.should_shutdown = True
+            rclpy.shutdown()
+
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+    teleop_turtle = Teleop()
+    teleop_turtle.should_shutdown = True
     rclpy.shutdown()
 
+# def main(args=None):
+#     rclpy.init(args=args)
+#     teleop_turtle = Teleop()
+#     socketio.run(app)
+#     move(teleop_turtle)
+#     rclpy.shutdown()
+
 if __name__ == '__main__':
-    main()
+    socketio.run(app)
+    # main()
