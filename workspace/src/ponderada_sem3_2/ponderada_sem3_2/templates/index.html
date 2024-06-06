@@ -1,0 +1,101 @@
+<!-- sempre rodaer no terminal: ros2 launch rosbridge_server rosbridge_websocket_launch.xml-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Example</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/eventemitter2@6.4.9/lib/eventemitter2.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            var socket = io();
+
+            var ros = new ROSLIB.Ros({
+                url : 'ws://localhost:9090'
+            });
+
+            socket.on('connect', function() {
+                socket.send('User has connected!');
+            });
+
+            document.getElementById('upButton').onclick = function() {
+                var text = "up";
+                socket.send(text);
+            };
+
+            document.getElementById('downButton').onclick = function() {
+                var text = "down";
+                socket.send(text);
+            };
+
+            document.getElementById('leftButton').onclick = function() {
+                var text = "left";
+                socket.send(text);
+            };
+
+            document.getElementById('rightButton').onclick = function() {
+                var text = "right";
+                socket.send(text);
+            };
+
+            document.getElementById('s').onclick = function() {
+                var text = "stop";
+                socket.send(text);
+            };
+
+            ros.on('connection', function() {
+              console.log('Connected to websocket server.');
+            });
+
+            ros.on('error', function(error) {
+              console.log('Error connecting to websocket server: ', error);
+            });
+
+            ros.on('close', function() {
+              console.log('Connection to websocket server closed.');
+            });
+
+            // Topic to receive video frames
+            var videoTopic = new ROSLIB.Topic({
+              ros : ros,
+              name : '/video_frames',
+              messageType : 'sensor_msgs/CompressedImage'
+            });
+
+            let lastFrameTime = null;
+
+            // Function to handle incoming video frames
+            videoTopic.subscribe(function(message) {
+              var currentTime = performance.now();
+
+              if (lastFrameTime !== null) {
+                  var latency = currentTime - lastFrameTime;
+                  var fps = 1000 / latency;
+                  document.getElementById('fps').innerText = `FPS: ${fps.toFixed(0)}`;
+              }
+
+              lastFrameTime = currentTime;
+
+              var img = document.getElementById('videoStream');
+              img.src = 'data:image/jpeg;base64,' + message.data;
+            });
+
+            window.onload = function() {
+              // Subscribe to video frames once
+              videoTopic.subscribe();
+            };
+        });
+    </script>
+</head>
+<body>
+    <h1>WebSocket Example</h1>
+    <img id="videoStream" alt="Video Stream" style="width: 720px; height: 420px; object-fit: contain;" />
+    <div id="fps">FPS: N/A</div>
+    <button id="upButton">Up</button>
+    <button id="downButton">Down</button>
+    <button id="leftButton">Left</button>
+    <button id="rightButton">Right</button>
+    <button id="s">Stop</button>
+    <div id="messages"></div>
+</body>
+</html>
