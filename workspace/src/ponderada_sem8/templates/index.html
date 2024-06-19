@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Predição de Imagem</title>
+    <script src="https://unpkg.com/htmx.org@1.6.1/dist/htmx.min.js"></script>
 </head>
 <body>
-    div>
-        <h1>Home</h1>
-        <p>Home page content</p>
-        <form action="/modelo" method="post" enctype="multipart/form-data">
-            <input type="file" alt="Submit" width="48" height="48" name="teste_modelo">
-            <button type="submit">Submit</button>
+    <div>
+        <h1>Predição de Imagem</h1>
+        <p>Envie uma imagem para obter a predição do número na imagem.</p>
+        <form action="/modelo" method="post" enctype="multipart/form-data" hx-target="#resultado" hx-swap="innerHTML">
+            <input type="file" name="teste_modelo" accept="image/*" required>
+            <button type="submit">Enviar</button>
         </form>
-        
-    </div>
+        <div id="resultado">
+        </div>
     </div>
 </body>
 </html>
